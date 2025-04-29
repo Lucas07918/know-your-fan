@@ -4,7 +4,7 @@ import { useNavigate } from 'react-router-dom'
 
 
 
-function CadastroPage({ setUserData }) {
+function CadastroPage({ updateProfile }) {
   // 🎯 Estados para cada campo
   const [fullName, setFullName] = useState('')
   const [address, setAddress] = useState('')
@@ -21,13 +21,7 @@ function CadastroPage({ setUserData }) {
     e.preventDefault()
 
     // 🎯 Dados reunidos
-    setUserData({
-      fullName,
-      address,
-      cpf,
-      interests,
-      activities,
-    })
+    updateProfile({ fullName, address, cpf, interests, activities });
     
     
     toast({

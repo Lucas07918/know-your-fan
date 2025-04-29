@@ -10,8 +10,9 @@ function ConectarRedesPage({ setUserData }) {
     // Atualizar o userData adicionando "Twitter" aos socialLinks
     setUserData(prev => ({
       ...prev,
-      socialLinks: [...prev.socialLinks, 'Twitter'],
+      socialLinks: [...(prev.socialLinks || []), { link: 'https://twitter.com/seuperfil', status: 'validado' }]
     }))
+
 
     setTimeout(() => {
       navigate('/hub')  // Agora vai direto pro hub!
