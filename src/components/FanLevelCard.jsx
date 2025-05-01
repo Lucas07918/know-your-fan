@@ -1,5 +1,6 @@
 import { Box, Flex, Text, CircularProgress, CircularProgressLabel, VStack, HStack, Button, Icon } from "@chakra-ui/react";
 import { FaMedal } from "react-icons/fa";
+import { useNavigate } from "react-router-dom";
 
 // Função para pegar título baseado no nível
 const getLevelTitle = (level) => {
@@ -8,6 +9,8 @@ const getLevelTitle = (level) => {
 };
 
 export default function FanLevelCard({ fanLevel = 0, name = "Usuário", medals = [true, false, false, true, false] }) {
+  const navigate = useNavigate();
+  
   // Calcular o nível atual
   const level = Math.min(5, Math.floor(fanLevel / 100) + 1);
   const nextLevelProgress = Math.min(100, fanLevel % 100);
@@ -67,6 +70,7 @@ export default function FanLevelCard({ fanLevel = 0, name = "Usuário", medals =
               color="black"
               size="sm"
               _hover={{ bg: "yellow.400" }}
+              onClick={() => navigate("/ganhar-pontos")}
             >
               Ganhe mais pontos
             </Button>

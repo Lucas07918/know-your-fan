@@ -7,6 +7,8 @@ import ConectarRedesPage from './pages/ConectarRedesPage'
 import HubPage from './pages/HubPage'
 import PerfilPage from './pages/PerfilPage'
 import EditProfilePage from "./pages/EditProfilePage";
+import EarnPointsPage from './pages/EarnPointsPage'
+import CallbackPage from './pages/CallbackPage'
 
 function App() {
   const [userData, setUserData] = useState({
@@ -69,6 +71,8 @@ function App() {
       <Route path="/hub" element={<HubPage userData={userData} addSocialLink={addSocialLink} updateFanLevel={updateFanLevel} />} />
       <Route path="/perfil" element={<PerfilPage userData={userData} />} />
       <Route path="/editar-perfil" element={<EditProfilePage userData={userData} setUserData={setUserData} />} />
+      <Route path="/ganhar-pontos" element={<EarnPointsPage />}></Route>
+      <Route path="/callback" element={<CallbackPage setUserData={setUserData} />} />
     </Routes>
   )
 }

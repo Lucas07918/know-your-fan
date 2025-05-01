@@ -126,6 +126,7 @@
 // export default HubPage
 
 
+import TwitchLiveCard from "../components/TwitchLiveCard";
 import FanLevelCard from "../components/FanLevelCard";
 import { Box, Flex, SimpleGrid, Grid, GridItem } from "@chakra-ui/react";
 
@@ -172,7 +173,8 @@ export default function HubPage({ userData }) {
           </Grid>
 
           <SimpleGrid h="25%" columns={2} gap={4}>
-            <CardItem title="Card 5" height="100%" />
+            {/* <CardItem title="Card 5" height="100%" /> */}
+            <TwitchLiveCard />
             <CardItem title="Card 6" height="100%" />
           </SimpleGrid>
         </Box>
