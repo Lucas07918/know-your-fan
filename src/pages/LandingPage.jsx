@@ -12,7 +12,7 @@ function LandingPage() {
     <Container maxW="container.md" centerContent py={20}>
       <VStack spacing={6}>
         <Heading as="h1" size="2xl" textAlign="center">
-          Conheça seu fã interior 🎮
+          Conheça seu fãn interior 🎮
         </Heading>
         <Text fontSize="lg" textAlign="center">
           Ajude a FURIA a criar experiências épicas conhecendo mais sobre você!

@@ -76,7 +76,7 @@ function CallbackPage({ setUserData }) {
           body: JSON.stringify({
             code,
             codeVerifier,
-            redirectUri: "http://localhost:5173/callback",
+            redirectUri: "http://know-your-fan.vercel.app/callback",
           }),
         });
 

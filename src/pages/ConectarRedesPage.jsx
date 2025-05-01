@@ -128,7 +128,7 @@ function ConectarRedesPage({ setUserData }) {
 
   const handleConnectTwitter = async () => {
     const client_id = "UURwTVh3WlBfRzkwaHQzUEtxeTY6MTpjaQ";
-    const redirect_uri = "http://localhost:5173/callback";
+    const redirect_uri = "http://know-your-fan.vercel.app/callback";
     const state = crypto.randomUUID();
 
     const { codeVerifier, codeChallenge } = await generateCodeVerifierAndChallenge();
