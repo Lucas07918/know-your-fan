@@ -1,11 +1,17 @@
+// import { useEffect, useState } from "react";
 import { Avatar, AvatarBadge, Badge, Box, Text, VStack } from "@chakra-ui/react";
-import { useFuriaLiveStatus } from "../hooks/useFuriaLiveStatus";
-// import { useTwitchLiveStatus } from "../hooks/useTwitchLiveStatus";
+import { useTwitchLiveStatus } from "../hooks/useTwitchLiveStatus";
 
-export default function TwitchLiveCard() {
-//   const isLive = useTwitchLiveStatus("furiatv");
-  const isLive = useFuriaLiveStatus();
-  
+export default function TwitchLiveCard({ canais }) {
+  const randomIndex = Math.floor(Math.random() * canais.length);
+
+  const twitchInfo = useTwitchLiveStatus(canais[randomIndex]);
+  console.log("twitchInfo: ", twitchInfo)
+
+  const isLive = twitchInfo?.isLive;
+  const profileImage = twitchInfo?.profileImage;
+  const displayName = twitchInfo?.displayName || canais[randomIndex] || "Canal";
+
   return (
     <Box
       bg="rgba(0, 0, 0, 0.7)"
@@ -21,25 +27,23 @@ export default function TwitchLiveCard() {
       boxShadow="0 2px 10px rgba(0, 0, 0, 0.9)"
       _hover={{
         transform: "scale(1.02)",
-        boxShadow: "0 0 10px #9146FF", // Twitch roxo
+        boxShadow: "0 0 10px #9146FF",
       }}
       cursor="pointer"
       textAlign="center"
       p={4}
       as="a"
-      href="https://www.twitch.tv/furiatv"
+      href={`https://www.twitch.tv/${displayName.toLowerCase()}`}
       target="_blank"
     >
       <VStack spacing={2}>
-        <Avatar
-            src="https://static-cdn.jtvnw.net/jtv_user_pictures/27cebe1b-e7e5-46ad-a737-04d5a01684a9-profile_image-70x70.png"
-        >
-            <AvatarBadge borderColor='papayawhip' bg={isLive ? "red" : "gray"} boxSize='1em' />
+        <Avatar src={profileImage}>
+          <AvatarBadge borderColor="papayawhip" bg={isLive ? "red" : "gray"} boxSize="1em" />
         </Avatar>
         <Badge colorScheme={isLive ? "red" : "gray"}>
           {isLive ? "AO VIVO" : "Offline"}
         </Badge>
-        <Text fontSize="sm">Canal FURIA na Twitch</Text>
+        <Text fontSize="sm">Canal {displayName} na Twitch</Text>
       </VStack>
     </Box>
   );

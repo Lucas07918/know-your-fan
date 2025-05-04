@@ -1,153 +1,171 @@
-// import { Button, Container, Heading, VStack, Text, HStack, Image } from '@chakra-ui/react'
-// import { useNavigate } from 'react-router-dom'
-// import { loginWithGoogle } from '../firebase/auth'
-// import { FcGoogle } from "react-icons/fc";
-// import { BsTwitterX } from "react-icons/bs";
-// import { REDIRECT_URI } from '../config/env';
+import { useState } from 'react';
+import { Button, Container, VStack, Text, HStack, Spinner } from '@chakra-ui/react';
+import { loginWithGoogle, loginWithTwitter } from '../firebase/auth';
+import { FcGoogle } from 'react-icons/fc';
+import { BsTwitterX } from 'react-icons/bs';
+import { TwitterAuthProvider } from 'firebase/auth';
+import { doc, setDoc } from 'firebase/firestore';
+import axios from 'axios';
+import { db } from '../firebase/config'; // Adjust path to your firebase.js
 
+const esportsKeywords = [
+  'CS:GO', 'Counter-Strike 2', 'Valorant', 'League of Legends', 'Wild Rift', 'TFT',
+  'Dota 2', 'PUBG Mobile', 'Free Fire', 'Rainbow Six', 'Rocket League', 'Fortnite',
+  'Apex Legends', 'Overwatch 2', 'Call of Duty', 'CBLOL', 'FURIA', 'LOUD', 'MIBR',
+  'paiN Gaming', 'INTZ', 'RED Canids', 'Fluxo', 'G2 Esports', 'NAVI', 'FaZe Clan',
+  '100 Thieves', 'TSM', 'Team Liquid', 'Cloud9', 'Evil Geniuses', 'SK Gaming',
+  'Competitivo', 'Streamers', 'Skins', 'Watch Parties', 'Pro Player', 'IGL',
+  'Sniper', 'Entry Fragger', 'Coach', 'Analista', 'Caster', 'Narrador', 'Influencer',
+  'FPS', 'MOBA', 'Tier 1', 'Tier 2', 'Fantasy League', 'Clips e Highlights',
+];
 
-// function ConectarRedesPage({ setUserData }) {
-//   const navigate = useNavigate()
-
-//   const handleConnectGoogle = async () => {
-//     try {
-//       const { user } = await loginWithGoogle()
-
-//       // Atualiza o userData com os dados do usuário logado
-//       setUserData(prev => ({
-//         ...prev,
-//         name: user.displayName,
-//         email: user.email,
-//         photoURL: user.photoURL,
-//         socialLinks: [...(prev.socialLinks || []), {
-//           link: `https://instagram.com/${user.displayName.replace(/\s+/g, '')}`,
-//           status: 'pendente'
-//         }]
-//       }))
-//       console.log('Usuário logado:', user)
-
-//       setTimeout(() => {
-//         navigate('/hub')
-//       }, 300)
-//  // só redireciona depois do login com sucesso
-//     } catch (error) {
-//       console.error('Erro ao conectar com Google:', error)
-//       alert('Não foi possível conectar com o Google. Tente novamente.')
-//     }
-//   }
-
-//   const handleConnectTwitter = () => {
-//     const TWITTER_CLIENT_ID = import.meta.env.VITE_TWITTER_CLIENT_ID;
-//     const redirectUri = REDIRECT_URI;
-//     const authUrl = `https://twitter.com/i/oauth2/authorize?response_type=code&client_id=${TWITTER_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&scope=tweet.read users.read offline.access&state=state123&code_challenge=challenge&code_challenge_method=plain`;
-//     window.location.href = authUrl;
-//   };
-
-//   return (
-//     <Container maxW="container.md" py={10}>
-//       <VStack spacing={6}>
-//         <Heading as="h2" size="xl" textAlign="center">
-//           Conectar Conta Google 🎮
-//         </Heading>
-
-//         <Text textAlign="center" fontSize="lg" color="gray.500">
-//           Faça login com sua conta Google para continuar
-//         </Text>
-
-//         <Button onClick={handleConnectGoogle} size="lg" w="full" variant="outline">
-//           <HStack justify="center" w="full">
-//             <FcGoogle />
-//             <Text>Entrar com Google</Text>
-//           </HStack>
-//         </Button>
-//         <Button colorScheme="blue" size="lg" w="full" onClick={handleConnectTwitter}>
-//           <HStack justify="center" w="full">
-//             <BsTwitterX />
-//             <Text>Conectar com o Twitter</Text>
-//           </HStack>
-//         </Button>
-//       </VStack>
-//     </Container>
-//   )
-// }
-
-// export default ConectarRedesPage
-
-
-import { Button, Container, Heading, VStack, Text, HStack } from '@chakra-ui/react'
-import { useNavigate } from 'react-router-dom'
-import { loginWithGoogle } from '../firebase/auth'
-import { FcGoogle } from "react-icons/fc";
-import { BsTwitterX } from "react-icons/bs";
-
-function ConectarRedesPage({ setUserData }) {
-  const navigate = useNavigate();
+function ConectarRedesPage({ setUserData, userData }) {
+  const [twitterLoading, setTwitterLoading] = useState(false);
+  const [twitterConnected, setTwitterConnected] = useState(false);
 
   const handleConnectGoogle = async () => {
     try {
       const { user } = await loginWithGoogle();
 
-      setUserData(prev => ({
+      setUserData((prev) => ({
         ...prev,
         name: user.displayName,
         email: user.email,
         photoURL: user.photoURL,
         socialLinks: [...(prev.socialLinks || []), {
           link: `https://instagram.com/${user.displayName.replace(/\s+/g, '')}`,
-          status: 'pendente'
-        }]
+          status: 'pendente',
+        }],
       }));
 
       console.log('Usuário logado:', user);
-      setTimeout(() => navigate('/hub'), 300);
     } catch (error) {
       console.error('Erro ao conectar com Google:', error);
       alert('Não foi possível conectar com o Google. Tente novamente.');
+      if (typeof setUserData !== 'function') {
+        console.error('setUserData não foi passado corretamente!');
+        return;
+      }
     }
   };
 
-  const base64urlEncode = buffer => {
-    return btoa(String.fromCharCode(...new Uint8Array(buffer)))
-      .replace(/\+/g, '-')
-      .replace(/\//g, '_')
-      .replace(/=+$/, '');
-  };
-
-  const generateCodeVerifierAndChallenge = async () => {
-    const array = new Uint8Array(32);
-    crypto.getRandomValues(array);
-    const codeVerifier = base64urlEncode(array);
-
-    const encoder = new TextEncoder();
-    const data = encoder.encode(codeVerifier);
-    const digest = await crypto.subtle.digest('SHA-256', data);
-    const codeChallenge = base64urlEncode(digest);
-
-    return { codeVerifier, codeChallenge };
-  };
-
   const handleConnectTwitter = async () => {
-    const client_id = "UURwTVh3WlBfRzkwaHQzUEtxeTY6MTpjaQ";
-    const redirect_uri = "http://know-your-fan.vercel.app/callback";
-    const state = crypto.randomUUID();
+    setTwitterLoading(true);
+    try {
+      const { user, result } = await loginWithTwitter();
+      console.log('Usuário autenticado com Twitter:', user);
 
-    const { codeVerifier, codeChallenge } = await generateCodeVerifierAndChallenge();
-    localStorage.setItem("twitter_code_verifier", codeVerifier);
+      // Get Twitter credential
+      const credential = TwitterAuthProvider.credentialFromResult(result);
+      if (!credential) {
+        throw new Error('Falha ao obter credenciais do Twitter');
+      }
+      const accessToken = credential.accessToken;
+      console.log('Access token obtido:', accessToken);
 
-    const twitterAuthUrl = `https://x.com/i/oauth2/authorize?response_type=code&client_id=${client_id}&redirect_uri=${encodeURIComponent(redirect_uri)}&scope=tweet.read users.read offline.access&state=${state}&code_challenge=${codeChallenge}&code_challenge_method=S256`;
+      // Fetch Twitter data
+      const twitterData = await fetchTwitterData(accessToken, userData);
+      console.log('Dados do Twitter obtidos:', twitterData);
 
-    window.location.href = twitterAuthUrl;
+      // Save to Firebase
+      await saveToFirebase(user.uid, twitterData);
+      console.log('Dados salvos no Firebase');
+
+      // Update userData
+      setUserData((prev) => ({
+        ...prev,
+        twitter: {
+          id: twitterData.id,
+          username: twitterData.username,
+          following: twitterData.following,
+          esportsTweets: twitterData.esportsTweets,
+        },
+      }));
+
+      setTwitterConnected(true);
+      alert('Conta Twitter conectada com sucesso!');
+    } catch (error) {
+      console.error('Erro ao conectar com Twitter:', {
+        code: error.code,
+        message: error.message,
+        details: error
+      });
+      alert(`Não foi possível conectar com o Twitter: ${error.message}`);
+    } finally {
+      setTwitterLoading(false);
+    }
+  };
+
+  const fetchTwitterData = async (accessToken, userData) => {
+    try {
+      // Fetch user profile
+      const userResponse = await axios.get('https://api.twitter.com/2/users/me', {
+        headers: { Authorization: `Bearer ${accessToken}` },
+      });
+      const { id, username } = userResponse.data.data;
+
+      // Fetch following
+      const followingResponse = await axios.get(
+        `https://api.twitter.com/2/users/${id}/following?max_results=100`,
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+      const following = followingResponse.data.data.map((f) => ({
+        id: f.id,
+        username: f.username,
+        name: f.name,
+      }));
+
+      // Fetch recent tweets
+      const tweetsResponse = await axios.get(
+        `https://api.twitter.com/2/users/${id}/tweets?max_results=20&tweet.fields=created_at,entities`,
+        { headers: { Authorization: `Bearer ${accessToken}` } }
+      );
+      const tweets = tweetsResponse.data.data || [];
+
+      // Filter esports-related tweets
+      const combinedKeywords = [
+        ...esportsKeywords,
+        ...(userData?.interests || []).map((i) => i.toLowerCase()),
+      ];
+      const esportsTweets = tweets
+        .filter((tweet) => {
+          const text = tweet.text.toLowerCase();
+          const entities = tweet.entities || {};
+          const hashtags = (entities.hashtags || []).map((h) => h.tag.toLowerCase());
+          const mentions = (entities.mentions || []).map((m) => m.username.toLowerCase());
+          return combinedKeywords.some((keyword) =>
+            text.includes(keyword.toLowerCase()) ||
+            hashtags.includes(keyword.toLowerCase()) ||
+            mentions.includes(keyword.toLowerCase())
+          );
+        })
+        .map((tweet) => ({
+          id: tweet.id,
+          text: tweet.text,
+          created_at: tweet.created_at,
+        }));
+
+      return { id, username, following, esportsTweets };
+    } catch (error) {
+      console.error('Twitter API error:', error);
+      throw new Error('Falha ao buscar dados do Twitter.');
+    }
+  };
+
+  const saveToFirebase = async (uid, twitterData) => {
+    try {
+      await setDoc(doc(db, 'users', uid, 'social', 'tweet'), twitterData, { merge: true });
+    } catch (error) {
+      console.error('Firebase save error:', error);
+      throw new Error('Falha ao salvar dados no Firebase.');
+    }
   };
 
   return (
-    <Container maxW="container.md" py={10}>
+    <Container maxW="container.md" py={0}>
       <VStack spacing={6}>
-        <Heading as="h2" size="xl" textAlign="center">
-          Conectar Conta Google 🎮
-        </Heading>
-
         <Text textAlign="center" fontSize="lg" color="gray.500">
-          Faça login com sua conta Google para continuar
+          Faça login com suas contas para continuar
         </Text>
 
         <Button onClick={handleConnectGoogle} size="lg" w="full" variant="outline">
@@ -157,17 +175,28 @@ function ConectarRedesPage({ setUserData }) {
           </HStack>
         </Button>
 
-        <Button colorScheme="blue" size="lg" w="full" onClick={handleConnectTwitter}>
+        <Button
+          size="lg"
+          w="full"
+          variant="outline"
+          onClick={handleConnectTwitter}
+          isLoading={twitterLoading}
+          isDisabled={twitterConnected}
+        >
           <HStack justify="center" w="full">
             <BsTwitterX />
-            <Text>Conectar com o Twitter</Text>
+            <Text>{twitterConnected ? 'Twitter Conectado' : 'Entrar com Twitter'}</Text>
           </HStack>
         </Button>
+
+        {twitterConnected && (
+          <Text color="green.500" fontSize="sm">
+            Conta Twitter conectada com sucesso!
+          </Text>
+        )}
       </VStack>
     </Container>
   );
 }
 
 export default ConectarRedesPage;
-
-

@@ -1,59 +1,83 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom'
-import { useState } from "react"
+import { useEffect, useState } from "react"
+import { onAuthStateChanged } from "firebase/auth"
+import { doc, getDoc, setDoc } from "firebase/firestore"
+import { auth, db } from "./firebase/config"
+
 import LandingPage from './pages/LandingPage'
 import CadastroPage from './pages/CadastroPage'
 import UploadDocumentoPage from './pages/UploadDocumentoPage'
 import ConectarRedesPage from './pages/ConectarRedesPage'
 import HubPage from './pages/HubPage'
 import PerfilPage from './pages/PerfilPage'
-import EditProfilePage from "./pages/EditProfilePage";
+import EditProfilePage from "./pages/EditProfilePage"
 import EarnPointsPage from './pages/EarnPointsPage'
 import CallbackPage from './pages/CallbackPage'
 
 function App() {
-  const [userData, setUserData] = useState({
-    fullName: "indefinido",
-    address: "indefinido",
-    cpf: "indefinido",
-    interests: "indefinido",
-    activities: "indefinido",
-    socialLinks: [],
-    fanLevel: 0,
-  });
+  const [userData, setUserData] = useState(null);
+  const [uid, setUid] = useState(null)
 
-  function updateProfile({ fullName, address, cpf, interests, activities }) {
-    setUserData(prev => ({
-      ...prev,
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, async (user) => {
+      if (user) {
+        setUid(user.uid);
+        // busca dados do Firestore
+        const ref = doc(db, "users", user.uid);
+        const snap = await getDoc(ref);
+        if (snap.exists()) {
+          setUserData(snap.data());
+        }
+      } else {
+        setUid(null);
+        setUserData(null);
+      }
+    });
+    return () => unsub();
+  }, []);
+
+  async function handleUpdateProfile({ fullName, address, cpf, interests, events, products }) {
+    const updatedData = {
+      ...userData,
       fullName,
       address,
       cpf,
       interests,
-      activities,
-    }));
+      events,
+      products,
+      validated: true
+    }
+
+    setUserData(updatedData);
+
+    if (uid) {
+      try {
+        await setDoc(doc(db, "users", uid), updatedData, { merge: true });
+        console.log("Perfil salvo com sucesso no Firestore");
+      } catch (err) {
+        console.error("Erro ao salvar perfil:", err);
+      }
+    }
   }
+
+  console.log("uid app: ", uid)
 
   function addSocialLink(newLink, updateExisting = false) {
     setUserData(prev => {
       const filteredLinks = (prev.socialLinks || []).filter(link => link !== undefined);
 
-      if (updateExisting) {
-        // Atualiza o status do link existente sem duplicá-lo
-        return {
-          ...prev,
-          socialLinks: filteredLinks.map(item =>
+      const updatedSocialLinks = updateExisting
+        ? filteredLinks.map(item =>
             item.link === newLink.link ? { ...item, status: newLink.status } : item
           )
-        };
-      } else {
-        // Adiciona um novo link
-        return {
-          ...prev,
-          socialLinks: [...filteredLinks, newLink]
-        };
-      }
+        : [...filteredLinks, newLink];
+
+      return {
+        ...prev,
+        socialLinks: updatedSocialLinks
+      };
     });
   }
-
 
   function updateFanLevel(newLevel) {
     setUserData(prev => ({
@@ -65,13 +89,13 @@ function App() {
   return (
     <Routes>
       <Route path="/" element={<LandingPage />} />
-      <Route path="/cadastro" element={<CadastroPage updateProfile={updateProfile} />} />
+      <Route path="/cadastro" element={<CadastroPage setUserData={setUserData} updateProfile={handleUpdateProfile} />} />
       <Route path="/upload-documento" element={<UploadDocumentoPage />} />
-      <Route path="/conectar-redes" element={<ConectarRedesPage setUserData={setUserData} />} />
-      <Route path="/hub" element={<HubPage userData={userData} addSocialLink={addSocialLink} updateFanLevel={updateFanLevel} />} />
+      <Route path="/conectar-redes" element={<ConectarRedesPage userData={userData} setUserData={setUserData} />} />
+      <Route path="/hub" element={<HubPage uid={uid} userData={userData} addSocialLink={addSocialLink} updateFanLevel={updateFanLevel} />} />
       <Route path="/perfil" element={<PerfilPage userData={userData} />} />
       <Route path="/editar-perfil" element={<EditProfilePage userData={userData} setUserData={setUserData} />} />
-      <Route path="/ganhar-pontos" element={<EarnPointsPage />}></Route>
+      <Route path="/ganhar-pontos" element={<EarnPointsPage />} />
       <Route path="/callback" element={<CallbackPage setUserData={setUserData} />} />
     </Routes>
   )

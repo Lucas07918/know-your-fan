@@ -1,0 +1,140 @@
+import { useEffect, useState } from "react";
+import { Box, Text, Image, Flex, Spinner, VStack } from "@chakra-ui/react";
+
+const API_TOKEN = import.meta.env.VITE_PANDASCORE_TOKEN;
+const FURIA_TEAM_ID = 124530;
+
+export default function UpcomingFuriaMatchCard() {
+  const [match, setMatch] = useState(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function fetchFuriaMatch() {
+      try {
+        const response = await fetch(
+          `https://api.pandascore.co/teams/${FURIA_TEAM_ID}/matches?filter[future]=true&filter[not_started]=true&sort=&page=1&per_page=50`,
+          {
+            method: "GET",
+            headers: {
+              accept: "application/json",
+              Authorization: `Bearer ${API_TOKEN}`,
+            },
+          }
+        );
+
+        if (!response.ok) {
+          throw new Error("Falha ao buscar dados da Pandascore API");
+        }
+
+        const data = await response.json();
+        if (data.length > 0) {
+          setMatch(data[0]);
+        }
+      } catch (error) {
+        console.error("Erro ao buscar partida da FURIA:", error);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    fetchFuriaMatch();
+  }, []);
+
+  if (loading) {
+    return (
+      <Box
+        bg="rgba(0,0,0,0.7)"
+        backdropFilter="blur(5px)"
+        borderRadius="2xl"
+        height="100%"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        color="white"
+        fontWeight="bold"
+        transition="all 0.3s ease"
+        boxShadow="0 2px 10px rgba(0,0,0,0.9)"
+        _hover={{
+          transform: "scale(1.02)",
+          boxShadow: "0 0 10px #FFD700",
+        }}
+      >
+        <Spinner color="gold" />
+      </Box>
+    );
+  }
+
+  if (!match) {
+    return (
+      <Box
+        bg="rgba(0,0,0,0.7)"
+        backdropFilter="blur(5px)"
+        borderRadius="2xl"
+        height="100%"
+        display="flex"
+        alignItems="center"
+        justifyContent="center"
+        color="white"
+        fontWeight="bold"
+        transition="all 0.3s ease"
+        boxShadow="0 2px 10px rgba(0,0,0,0.9)"
+        _hover={{
+          transform: "scale(1.02)",
+          boxShadow: "0 0 10px #FFD700",
+        }}
+        p={4}
+        textAlign="center"
+      >
+        <Text fontSize="sm">A FURIA não tem partidas futuras.</Text>
+      </Box>
+    );
+  }
+
+  const teamA = match.opponents?.[0]?.opponent;
+  const teamB = match.opponents?.[1]?.opponent;
+  const matchTime = new Date(match.begin_at).toLocaleString("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  });
+
+  return (
+    <Box
+      bg="rgba(0,0,0,0.7)"
+      backdropFilter="blur(5px)"
+      borderRadius="2xl"
+      height="100%"
+      display="flex"
+      alignItems="center"
+      justifyContent="center"
+      color="white"
+      fontWeight="bold"
+      transition="all 0.3s ease"
+      boxShadow="0 2px 10px rgba(0,0,0,0.9)"
+      _hover={{
+        transform: "scale(1.02)",
+        boxShadow: "0 0 10px #FFD700",
+      }}
+      p={4}
+    >
+      <VStack w="100%" h="100%" spacing={4} justify="center">
+        {/* Times lado a lado */}
+        <Flex w="100%" justify="space-between" align="center" gap={4}>
+          <VStack align="center" flex="1">
+            <Image src={teamA?.image_url} boxSize="60px" />
+            <Text fontSize="md">{teamA?.name}</Text>
+          </VStack>
+          <Text fontSize="lg">vs</Text>
+          <VStack align="center" flex="1">
+            <Image src={teamB?.image_url} boxSize="60px" />
+            <Text fontSize="md">{teamB?.name}</Text>
+          </VStack>
+        </Flex>
+        {/* Informações da partida embaixo */}
+        <VStack spacing={2} align="center">
+          <Text fontSize="lg" fontWeight="bold">{match.tournament?.name}</Text>
+          <Text fontSize="sm" color="gray.400">{matchTime}</Text>
+        </VStack>
+      </VStack>
+    </Box>
+  );
+}

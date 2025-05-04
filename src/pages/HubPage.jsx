@@ -1,136 +1,85 @@
-// import { Container, VStack, Heading, Button, Input, Box, Text, Progress, Spinner, Flex, useToast } from '@chakra-ui/react'
-// import { useState } from 'react'
-// import { useNavigate } from 'react-router-dom'
-
-// function HubPage({ userData, addSocialLink, updateFanLevel }) {
-//   const toast = useToast();
-
-//   const navigate = useNavigate()
-//   const [newLink, setNewLink] = useState('')
-
-//   const handleAddLink = () => {
-//     if (newLink) {
-//       // Verifica se o link é válido
-//       const isValid = newLink.toLowerCase().includes('furia') || newLink.toLowerCase().includes('esports');
-
-//       if (isValid) {
-//         // Verifica se o link já existe
-//         const linkExists = userData.socialLinks.some(item => item.link === newLink);
-
-//         if (linkExists) {
-//           // Se o link já existe, não faz nada e exibe um aviso
-//           toast({
-//             title: 'Link já adicionado!',
-//             description: 'Esse link de perfil já foi adicionado.',
-//             status: 'warning',
-//             duration: 4000,
-//             isClosable: true,
-//           });
-//         } else {
-//           const newSocialLink = { link: newLink, status: 'validando' };
-          
-//           // Adiciona o novo link com status "validando"
-//           addSocialLink(newSocialLink);
-          
-//           // Atualiza o fanLevel
-//           updateFanLevel(userData.fanLevel + 10);
-
-//           // Depois de 2 segundos, atualiza o status do link para 'validado'
-//           setTimeout(() => {
-//             addSocialLink({ link: newLink, status: 'validado' }, true);
-//           }, 2000);
-//         }
-//       } else {
-//         toast({
-//           title: 'Link inválido!',
-//           description: 'Insira um link de perfil de e-sports válido contendo "furia" ou "esports".',
-//           status: 'error',
-//           duration: 4000,
-//           isClosable: true,
-//         });
-//       }
-
-//       setNewLink('');
-//     }
-//   };
-
-
-
-  
-//   return (
-//     <Container maxW="container.md" py={10}>
-//       <VStack spacing={6} align="stretch">
-//         <Heading as="h2" size="xl" textAlign="center">
-//           Hub de E-sports 🎮
-//         </Heading>
-
-//         {/* Mostrar nível de fã */}
-//         <Box w="full" textAlign="center">
-//           <Text fontSize="lg" fontWeight="bold">Nível de Fã</Text>
-//           <Progress value={userData.fanLevel} size="lg" colorScheme="green" hasStripe isAnimated />
-//           <Text fontSize="xl">{userData.fanLevel}% - Você é um fã em crescimento! 🚀</Text>
-//         </Box>
-
-//         {/* Campo pra adicionar novo link */}
-//         <Box w="full" textAlign="center">
-//           <Input
-//             placeholder="Adicione um link de perfil de e-sports"
-//             value={newLink}
-//             onChange={(e) => setNewLink(e.target.value)}
-//             mb={3}
-//           />
-//           <Button onClick={handleAddLink} colorScheme="teal" size="lg" w="full">
-//             Adicionar Link
-//           </Button>
-//         </Box>
-
-//         {/* Lista de perfis conectados */}
-//         <Box w="full">
-//           <Text fontSize="lg" fontWeight="bold">Perfis Conectados:</Text>
-//           {userData.socialLinks && userData.socialLinks.length > 0 ? (
-//             <VStack spacing={3}>
-//               {userData.socialLinks.filter(link => link !== undefined).map((item, index) => (
-//                 item.link && (
-//                   <Box key={index} p={3} borderWidth={1} borderRadius="md" w="full" textAlign="center">
-//                     <Text noOfLines={1} isTruncated>{item.link}</Text>
-//                     {item.status === 'validado' ? (
-//                       <Text fontSize="sm" color="green.500">
-//                         Status: Validado ✅
-//                       </Text>
-//                     ) : (
-//                       <Flex align="center" justify="center">
-//                         <Text fontSize="sm" color="orange.400" mr={2}>
-//                           Status: Validando...
-//                         </Text>
-//                         <Spinner size="xs" />
-//                       </Flex>
-//                     )}
-//                   </Box>
-//                 )
-//               ))}
-//             </VStack>
-//           ) : (
-//             <Text color="gray.500">Nenhum link de perfil adicionado ainda.</Text>
-//           )}
-//         </Box>
-
-//         {/* Botão para ver o perfil */}
-//         <Button colorScheme="blue" onClick={() => navigate('/perfil')} w="full">
-//           Ver Perfil
-//         </Button>
-//       </VStack>
-//     </Container>
-//   )
-// }
-
-// export default HubPage
-
-
+import { useState, useEffect } from "react";
 import TwitchLiveCard from "../components/TwitchLiveCard";
 import FanLevelCard from "../components/FanLevelCard";
 import { Box, Flex, SimpleGrid, Grid, GridItem } from "@chakra-ui/react";
+import { doc, getDoc } from "firebase/firestore";
+import { db } from "../firebase/config";
+import RecommendedProductCard from "../components/RecommendedProductCard";
+import UpcomingMatchCard from "../components/UpcomingMatchCard";
+import EsportsNewsCard from "../components/EsportsNewsCard";
+import axios from "axios";
+import PlayerInfoCard from "../components/PlayerInfoCard";
 
-export default function HubPage({ userData }) {
+const NEWSAPI_KEY = import.meta.env.VITE_NEWSAPI_KEY;
+
+export default function HubPage({ uid, userData }) {
+  const [twitchData, setTwitchData] = useState(null);
+  const [newsArticles, setNewsArticles] = useState([]);
+  const [newsLoading, setNewsLoading] = useState(true);
+  const [newsError, setNewsError] = useState(null);
+
+  useEffect(() => {
+    async function loadUserData() {
+      if (!userData) {
+        console.log("Usuário ainda não carregado.");
+        return;
+      }
+      if (!uid) {
+        console.log("UID ainda não disponível.");
+        return;
+      }
+
+      const userRef = doc(db, "users", uid);
+      const userSnap = await getDoc(userRef);
+      if (!userSnap.exists()) {
+        console.log("Usuário não encontrado no Firestore.");
+        return;
+      }
+      const data = userSnap.data();
+
+      const interests = Array.isArray(data.interests) ? data.interests : [];
+      const twitchMap = { furia: "furiatv", loud: "loud", "pai n": "painlive", "g2 esports": "g2esports" };
+      const twitchChannels = interests.map(i => twitchMap[i.toLowerCase()]).filter(Boolean);
+      console.log("Canais Twitch mapeados:", twitchChannels);
+      setTwitchData(twitchChannels);
+    }
+
+    async function fetchNewsArticles() {
+      try {
+        const response = await axios.get(
+          "https://newsapi.org/v2/everything",
+          {
+            params: {
+              q: "esports OR e-sports",
+              sortBy: "publishedAt",
+              apiKey: NEWSAPI_KEY,
+              pageSize: 3,
+            },
+          }
+        );
+
+        if (response.data.articles.length > 0) {
+          setNewsArticles(response.data.articles);
+        } else {
+          setNewsError("Nenhuma notícia sobre e-sports encontrada.");
+        }
+      } catch (err) {
+        setNewsError("Erro ao buscar notícias: " + err.message);
+        console.error("Erro ao buscar notícias da NewsAPI:", err);
+      } finally {
+        setNewsLoading(false);
+      }
+    }
+
+    loadUserData();
+    if (NEWSAPI_KEY) {
+      fetchNewsArticles();
+    } else {
+      setNewsError("Chave da NewsAPI não configurada.");
+      setNewsLoading(false);
+    }
+  }, [uid, userData]);
+
   return (
     <Flex
       gap={6}
@@ -147,42 +96,53 @@ export default function HubPage({ userData }) {
         px="10%"
         py={10}
         h="100vh"
-        backgroundColor="rgba(0, 0, 0, 0.6)" // Um overlay leve pra melhorar contraste
+        backgroundColor="rgba(0, 0, 0, 0.6)"
       >
-        {/* Área principal */}
         <Box flex="3" display="flex" flexDirection="column" gap={4} h="100%">
           <SimpleGrid h="25%" columns={3} gap={4}>
-            <CardItem title="Card 1" height="100%" />
-            <CardItem title="Card 2" height="100%" />
-            <CardItem title="Card 3" height="100%" />
+            <EsportsNewsCard
+              article={newsArticles[0]}
+              index={0}
+              isLoading={newsLoading}
+              error={newsError}
+            />
+            <EsportsNewsCard
+              article={newsArticles[1]}
+              index={1}
+              isLoading={newsLoading}
+              error={newsError}
+            />
+            <EsportsNewsCard
+              article={newsArticles[2]}
+              index={2}
+              isLoading={newsLoading}
+              error={newsError}
+            />
           </SimpleGrid>
 
-          <Grid
-            h="50%"
-            templateRows="repeat(1, 1fr)"
-            templateColumns="repeat(4, 1fr)"
-            gap={4}
-          >
+          <Grid h="50%" templateRows="repeat(1, 1fr)" templateColumns="repeat(4, 1fr)" gap={4}>
             <GridItem colSpan={1}>
-              <CardItem title="Card 4" height="100%" />
+              {/* <CardItem title="Card 4" height="100%" /> */}
+              <PlayerInfoCard interests={userData?.interests || []} playerName="FalleN" />
             </GridItem>
             <GridItem colSpan={3}>
-              {/* <CardItem title="Card nível de fã" height="100%" /> */}
-              <FanLevelCard fanLevel={userData.fanLevel} name="Luc4ss1lv4" medals={[true, false, true, false, true]} />
+              <UpcomingMatchCard />
             </GridItem>
           </Grid>
 
           <SimpleGrid h="25%" columns={2} gap={4}>
-            {/* <CardItem title="Card 5" height="100%" /> */}
-            <TwitchLiveCard />
+            {twitchData ? (
+              <CardItem title="Ao vivo na Twitch" height="100%" />
+            ) : (
+              <CardItem title="Ao vivo na Twitch" height="100%" />
+            )}
             <CardItem title="Card 6" height="100%" />
           </SimpleGrid>
         </Box>
 
-        {/* Área lateral */}
         <Box width="15%" display="flex" flexDirection="column" gap={4} h="100%">
-          <CardItem title="Vertical 1" height="100%" />
-          <CardItem title="Vertical 2" height="100%" />
+          {/* <CardItem title="Vertical 1" height="100%" /> */}
+          <RecommendedProductCard interests={userData?.interests} />
         </Box>
       </Box>
     </Flex>
@@ -192,7 +152,7 @@ export default function HubPage({ userData }) {
 function CardItem({ title, height = "150px" }) {
   return (
     <Box
-      bg="rgba(0, 0, 0, 0.7)"
+      bg="rgba(0,0,0,0.7)"
       backdropFilter="blur(5px)"
       borderRadius="2xl"
       display="flex"
@@ -202,10 +162,10 @@ function CardItem({ title, height = "150px" }) {
       color="white"
       fontWeight="bold"
       transition="all 0.3s ease"
-      boxShadow="0 2px 10px rgba(0, 0, 0, 0.9)" // sombra fixa adicionada aqui
+      boxShadow="0 2px 10px rgba(0,0,0,0.9)"
       _hover={{
         transform: "scale(1.02)",
-        boxShadow: "0 0 10px #FFD700", // sombra dourada
+        boxShadow: "0 0 10px #FFD700",
       }}
       cursor="pointer"
       textAlign="center"
@@ -215,9 +175,3 @@ function CardItem({ title, height = "150px" }) {
     </Box>
   );
 }
-
-
-
-
-
-
