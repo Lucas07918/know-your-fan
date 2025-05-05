@@ -8,7 +8,7 @@ import {
   GridItem,
   Icon,
 } from "@chakra-ui/react";
-import { StarIcon, SunIcon } from "@chakra-ui/icons";
+import { StarIcon } from "@chakra-ui/icons";
 import { motion } from "framer-motion";
 import axios from "axios";
 

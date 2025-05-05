@@ -1,6 +1,5 @@
 import { useState, useEffect, useMemo } from "react";
 import TwitchLiveCard from "../components/TwitchLiveCard";
-import FanLevelCard from "../components/FanLevelCard";
 import { Box, Flex, SimpleGrid, Grid, GridItem, Text } from "@chakra-ui/react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase/config";
