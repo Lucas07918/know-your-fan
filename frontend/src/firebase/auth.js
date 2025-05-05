@@ -4,9 +4,6 @@ import { auth } from './config';
 const googleProvider = new GoogleAuthProvider();
 const twitterProvider = new TwitterAuthProvider();
 
-// Set Twitter OAuth 2.0 scopes
-twitterProvider.addScope('users.read tweet.read follows.read');
-
 export const loginWithGoogle = async () => {
   try {
     console.log('Iniciando login com Google...');
@@ -22,10 +19,6 @@ export const loginWithGoogle = async () => {
 export const loginWithTwitter = async () => {
   try {
     console.log('Iniciando login com Twitter...');
-    console.log('Twitter provider config:', {
-      scopes: twitterProvider._scopes,
-      customParameters: twitterProvider._customParameters,
-    });
     const result = await signInWithPopup(auth, twitterProvider);
     console.log('Login com Twitter bem-sucedido:', result);
     return { user: result.user, result };

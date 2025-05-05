@@ -1,7 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import TwitchLiveCard from "../components/TwitchLiveCard";
 import FanLevelCard from "../components/FanLevelCard";
-import { Box, Flex, SimpleGrid, Grid, GridItem } from "@chakra-ui/react";
+import { Box, Flex, SimpleGrid, Grid, GridItem, Text } from "@chakra-ui/react";
 import { doc, getDoc } from "firebase/firestore";
 import { db } from "../firebase/config";
 import RecommendedProductCard from "../components/RecommendedProductCard";
@@ -9,6 +9,8 @@ import UpcomingMatchCard from "../components/UpcomingMatchCard";
 import EsportsNewsCard from "../components/EsportsNewsCard";
 import axios from "axios";
 import PlayerInfoCard from "../components/PlayerInfoCard";
+import { useNavigate } from "react-router-dom";
+import esportsTags from "../datas/esports_news_tags.json";
 
 const NEWSAPI_KEY = import.meta.env.VITE_NEWSAPI_KEY;
 
@@ -17,40 +19,49 @@ export default function HubPage({ uid, userData }) {
   const [newsArticles, setNewsArticles] = useState([]);
   const [newsLoading, setNewsLoading] = useState(true);
   const [newsError, setNewsError] = useState(null);
+  const navigate = useNavigate();
+
+  // Memoize interests to prevent reference changes
+  const memoizedInterests = useMemo(() => userData?.interests || [], [userData?.interests]);
+
+  // Debug render count
+  console.log('HubPage rendered:', { uid, interests: memoizedInterests });
 
   useEffect(() => {
     async function loadUserData() {
-      if (!userData) {
-        console.log("Usuário ainda não carregado.");
-        return;
-      }
-      if (!uid) {
-        console.log("UID ainda não disponível.");
+      if (!userData || !uid) {
+        console.log('Missing userData or uid:', { userData, uid });
         return;
       }
 
-      const userRef = doc(db, "users", uid);
-      const userSnap = await getDoc(userRef);
-      if (!userSnap.exists()) {
-        console.log("Usuário não encontrado no Firestore.");
-        return;
-      }
-      const data = userSnap.data();
+      try {
+        const userRef = doc(db, "users", uid);
+        const userSnap = await getDoc(userRef);
+        if (!userSnap.exists()) {
+          console.log("Usuário não encontrado no Firestore.");
+          return;
+        }
+        const data = userSnap.data();
 
-      const interests = Array.isArray(data.interests) ? data.interests : [];
-      const twitchMap = { furia: "furiatv", loud: "loud", "pai n": "painlive", "g2 esports": "g2esports" };
-      const twitchChannels = interests.map(i => twitchMap[i.toLowerCase()]).filter(Boolean);
-      console.log("Canais Twitch mapeados:", twitchChannels);
-      setTwitchData(twitchChannels);
+        const interests = Array.isArray(data.interests) ? data.interests : [];
+        const twitchMap = { furia: "furiatv", loud: "loud", "pai n": "painlive", "g2 esports": "g2esports" };
+        const twitchChannels = interests.map(i => twitchMap[i.toLowerCase()]).filter(Boolean);
+        console.log("Canais Twitch mapeados:", twitchChannels);
+        setTwitchData(twitchChannels);
+      } catch (err) {
+        console.error("Erro ao carregar dados do usuário:", err);
+      }
     }
 
     async function fetchNewsArticles() {
       try {
+        const query = esportsTags.tags.slice(0, 20).join(" OR ");
+        console.log("Fetching news with query:", query);
         const response = await axios.get(
           "https://newsapi.org/v2/everything",
           {
             params: {
-              q: "esports OR e-sports",
+              q: query,
               sortBy: "publishedAt",
               apiKey: NEWSAPI_KEY,
               pageSize: 3,
@@ -78,12 +89,12 @@ export default function HubPage({ uid, userData }) {
       setNewsError("Chave da NewsAPI não configurada.");
       setNewsLoading(false);
     }
-  }, [uid, userData]);
+  }, [uid, userData]); // Stable dependencies
 
   return (
     <Flex
       gap={6}
-      backgroundImage="url('https://pbs.twimg.com/media/F98rnl8XwAAnrpY?format=jpg&name=large')"
+      backgroundColor="#272727"
       backgroundSize="cover"
       backgroundPosition="center"
       backgroundRepeat="no-repeat"
@@ -99,7 +110,7 @@ export default function HubPage({ uid, userData }) {
         backgroundColor="rgba(0, 0, 0, 0.6)"
       >
         <Box flex="3" display="flex" flexDirection="column" gap={4} h="100%">
-          <SimpleGrid h="25%" columns={3} gap={4}>
+          <SimpleGrid h="25%" columns={3} spacing={4}>
             <EsportsNewsCard
               article={newsArticles[0]}
               index={0}
@@ -122,40 +133,44 @@ export default function HubPage({ uid, userData }) {
 
           <Grid h="50%" templateRows="repeat(1, 1fr)" templateColumns="repeat(4, 1fr)" gap={4}>
             <GridItem colSpan={1}>
-              {/* <CardItem title="Card 4" height="100%" /> */}
-              <PlayerInfoCard interests={userData?.interests || []} playerName="FalleN" />
+              <PlayerInfoCard interests={memoizedInterests} playerName="FalleN" />
             </GridItem>
             <GridItem colSpan={3}>
-              <UpcomingMatchCard />
+              <UpcomingMatchCard interests={memoizedInterests} />
             </GridItem>
           </Grid>
 
-          <SimpleGrid h="25%" columns={2} gap={4}>
+          <SimpleGrid h="25%" columns={2} spacing={4}>
             {twitchData ? (
-              <CardItem title="Ao vivo na Twitch" height="100%" />
+              <TwitchLiveCard canais={twitchData} />
             ) : (
               <CardItem title="Ao vivo na Twitch" height="100%" />
             )}
-            <CardItem title="Card 6" height="100%" />
+            <CardItem
+              title="Perfis de E-sports"
+              subtitle="Adicione seus perfis de e-sports para mostrar suas conquistas"
+              height="100%"
+              onClick={() => navigate('/add-esports-profile')}
+            />
           </SimpleGrid>
         </Box>
 
         <Box width="15%" display="flex" flexDirection="column" gap={4} h="100%">
-          {/* <CardItem title="Vertical 1" height="100%" /> */}
-          <RecommendedProductCard interests={userData?.interests} />
+          <RecommendedProductCard interests={memoizedInterests} />
         </Box>
       </Box>
     </Flex>
   );
 }
 
-function CardItem({ title, height = "150px" }) {
+function CardItem({ title, subtitle, height = "150px", onClick }) {
   return (
     <Box
       bg="rgba(0,0,0,0.7)"
       backdropFilter="blur(5px)"
       borderRadius="2xl"
       display="flex"
+      flexDirection="column"
       alignItems="center"
       justifyContent="center"
       height={height}
@@ -170,8 +185,14 @@ function CardItem({ title, height = "150px" }) {
       cursor="pointer"
       textAlign="center"
       p={4}
+      onClick={onClick}
     >
-      {title}
+      <Text fontSize="lg">{title}</Text>
+      {subtitle && (
+        <Text fontSize="sm" fontWeight="normal" mt={2}>
+          {subtitle}
+        </Text>
+      )}
     </Box>
   );
 }

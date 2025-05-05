@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, memo } from "react";
 import {
   Box,
   Text,
@@ -16,11 +16,11 @@ const PANDASCORE_API_KEY = import.meta.env.VITE_PANDASCORE_TOKEN;
 const PLACEHOLDER_IMAGE = "https://via.placeholder.com/300?text=Player";
 
 const TEAM_PLAYER_MAP = {
-  furia: {
+  FURIA: {
     teamId: 124530,
     image: "https://cdn.pandascore.co/images/team/image/124530/8297.png",
     players: {
-      fallen: {
+      FALLEN: {
         id: 17497,
         role: "AWPer/IGL",
         hltvId: 2023,
@@ -32,54 +32,57 @@ const TEAM_PLAYER_MAP = {
           winnings: "~$1.2M USD",
         },
       },
-      chelo: { id: 17729, role: "Rifler", hltvId: 11219, nationality: "BR" },
-      yekindar: { id: 18732, role: "Entry Fragger", hltvId: 13915, nationality: "LV" },
-      yuurih: { id: 19664, role: "Rifler", hltvId: 12516, nationality: "BR" },
-      kscerato: { id: 19667, role: "Rifler", hltvId: 15631, nationality: "BR" },
-      skullz: { id: 23618, role: "Rifler", hltvId: 20026, nationality: "BR" },
-      guerri: { id: 36730, role: "Coach", hltvId: null, nationality: "BR" },
-      molodoy: { id: 55593, role: "Analyst", hltvId: null, nationality: "BR" },
+      CHELO: { id: 17729, role: "Rifler", hltvId: 11219, nationality: "BR" },
+      YEKINDAR: { id: 18732, role: "Entry Fragger", hltvId: 13915, nationality: "LV" },
+      YUURIH: { id: 19664, role: "Rifler", hltvId: 12516, nationality: "BR" },
+      KSCERATO: { id: 19667, role: "Rifler", hltvId: 15631, nationality: "BR" },
+      SKULLZ: { id: 23618, role: "Rifler", hltvId: 20026, nationality: "BR" },
+      GUERRI: { id: 36730, role: "Coach", hltvId: null, nationality: "BR" },
+      MOLODOY: { id: 55593, role: "Analyst", hltvId: null, nationality: "BR" },
     },
   },
-  g2: {
+  G2: {
     teamId: 3210,
     image: "https://cdn.pandascore.co/images/team/image/3210/5995.png",
     players: {
-      snax: { id: 17502, role: "Rifler", hltvId: 2553, nationality: "PL" },
-      hunter: { id: 17958, role: "Rifler", hltvId: 13238, nationality: "BA" },
-      malbsmd: { id: 21433, role: "AWPer", hltvId: 18720, nationality: "GT" },
-      hades: { id: 23117, role: "AWPer", hltvId: 17144, nationality: "PL" },
-      heavygod: { id: 30794, role: "Rifler", hltvId: 21371, nationality: "IL" },
+      SNAX: { id: 17502, role: "Rifler", hltvId: 2553, nationality: "PL" },
+      HUNTER: { id: 17958, role: "Rifler", hltvId: 13238, nationality: "BA" },
+      MALBSMD: { id: 21433, role: "AWPer", hltvId: 18720, nationality: "GT" },
+      HADES: { id: 23117, role: "AWPer", hltvId: 17144, nationality: "PL" },
+      HEAVYGOD: { id: 30794, role: "Rifler", hltvId: 21371, nationality: "IL" },
     },
   },
-  pain: {
+  PAIN: {
     teamId: 125751,
     image: "https://cdn.pandascore.co/images/team/image/125751/pain-gaming-farnhu45.png",
     players: {
-      biguzera: { id: 20370, role: "Rifler", hltvId: 18144, nationality: "BR" },
-      nqz: { id: 25471, role: "AWPer", hltvId: 20322, nationality: "BR" },
-      dav1deus: { id: 25589, role: "Rifler", hltvId: 20678, nationality: "BR" },
-      kauez: { id: 28003, role: "Rifler", hltvId: 20677, nationality: "BR" },
-      dgt: { id: 34000, role: "Rifler", hltvId: 19165, nationality: "UY" },
-      snowzin: { id: 39422, role: "Rifler", hltvId: null, nationality: "BR" },
+      BIGUZERA: { id: 20370, role: "Rifler", hltvId: 18144, nationality: "BR" },
+      NQZ: { id: 25471, role: "AWPer", hltvId: 20322, nationality: "BR" },
+      DAV1DEUS: { id: 25589, role: "Rifler", hltvId: 20678, nationality: "BR" },
+      KAUEZ: { id: 28003, role: "Rifler", hltvId: 20677, nationality: "BR" },
+      DGT: { id: 34000, role: "Rifler", hltvId: 19165, nationality: "UY" },
+      SNOWZIN: { id: 39422, role: "Rifler", hltvId: null, nationality: "BR" },
     },
   },
 };
 
-export default function PlayerInfoCard({ playerName = "", interests = [] }) {
+function PlayerInfoCard({ playerName = "", interests = [] }) {
   const [player, setPlayer] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
+
+  // Debug render
+  console.log("PlayerInfoCard rendered:", { playerName, interests });
 
   useEffect(() => {
     async function fetchPlayerData() {
       try {
         let selectedPlayerId = null;
-        let selectedPlayerName = playerName.toLowerCase();
+        let selectedPlayerName = playerName.toUpperCase();
         let playerInfo = null;
         let teamImage = PLACEHOLDER_IMAGE;
 
-        // Check if player is in TEAM_PLAYER_MAP
+        // Check TEAM_PLAYER_MAP
         for (const team of Object.keys(TEAM_PLAYER_MAP)) {
           if (selectedPlayerName && TEAM_PLAYER_MAP[team].players[selectedPlayerName]) {
             selectedPlayerId = TEAM_PLAYER_MAP[team].players[selectedPlayerName].id;
@@ -89,53 +92,40 @@ export default function PlayerInfoCard({ playerName = "", interests = [] }) {
           }
         }
 
-        // If no playerName provided, select from interests
+        // If no playerName, select from interests
         if (!selectedPlayerId && interests.length > 0) {
-          const team = interests
-            .map(i => i.toLowerCase())
-            .find(t => TEAM_PLAYER_MAP[t]);
+          const team = interests.find(t => TEAM_PLAYER_MAP[t]);
           if (team) {
             const players = Object.keys(TEAM_PLAYER_MAP[team].players);
-            selectedPlayerName = players[0] || "fallen";
+            selectedPlayerName = players[0] || "FALLEN";
             selectedPlayerId = TEAM_PLAYER_MAP[team].players[selectedPlayerName].id;
             playerInfo = TEAM_PLAYER_MAP[team].players[selectedPlayerName];
             teamImage = TEAM_PLAYER_MAP[team].image;
           }
         }
 
+        // Default to FalleN if no player found
         if (!selectedPlayerId) {
-          // Fallback to PandaScore search
-          const searchResponse = await axios.get(
-            `/api/pandascore/csgo/players`,
-            {
-              params: {
-                token: PANDASCORE_API_KEY,
-                name: selectedPlayerName || "FalleN",
-              },
-            }
-          );
-
-          if (searchResponse.data.length === 0) {
-            setError("Jogador não encontrado.");
-            setLoading(false);
-            return;
-          }
-
-          selectedPlayerId = searchResponse.data[0].id;
+          selectedPlayerName = "FALLEN";
+          selectedPlayerId = TEAM_PLAYER_MAP.FURIA.players.FALLEN.id;
+          playerInfo = TEAM_PLAYER_MAP.FURIA.players.FALLEN;
+          teamImage = TEAM_PLAYER_MAP.FURIA.image;
         }
 
-        // Fetch player details
+        // Fetch player details from PandaScore
+        console.log(`Fetching player: ${selectedPlayerName} (ID: ${selectedPlayerId})`);
         const playerResponse = await axios.get(
-          `/api/pandascore/csgo/players/${selectedPlayerId}`,
+          `https://api.pandascore.co/players/${selectedPlayerId}`,
           {
-            params: { token: PANDASCORE_API_KEY },
+            headers: { Authorization: `Bearer ${PANDASCORE_API_KEY}` },
           }
         );
 
+        console.log("PandaScore player response:", playerResponse.data);
         if (playerResponse.data) {
           setPlayer({ ...playerResponse.data, teamImage, playerInfo });
         } else {
-          setError("Jogador não encontrado.");
+          setError("Jogador não encontrado...");
         }
       } catch (err) {
         setError("Erro ao carregar jogador: " + err.message);
@@ -151,7 +141,7 @@ export default function PlayerInfoCard({ playerName = "", interests = [] }) {
       setError("Chave da PandaScore API não configurada.");
       setLoading(false);
     }
-  }, [playerName, interests]);
+  }, [playerName, interests.join(",")]);
 
   if (loading) {
     return (
@@ -237,7 +227,6 @@ export default function PlayerInfoCard({ playerName = "", interests = [] }) {
         transform: "scale(1.02)",
         boxShadow: "0 0 15px #FFD700",
       }}
-      // transition="all 0.3s ease"
     >
       <Box
         position="absolute"
@@ -310,21 +299,6 @@ export default function PlayerInfoCard({ playerName = "", interests = [] }) {
                   <Icon as={StarIcon} color="gold" mr={1} />
                   HLTV Top 20: {playerInfo.stats.hltvRankings || "Nenhum"}
                 </Text>
-                {/* <Text
-                  fontSize="xs"
-                  color="gray.300"
-                  textShadow="0 0 4px rgba(0,0,0,0.8)"
-                >
-                  <Icon as={SunIcon} color="gold" mr={1} />
-                  Ganhos: {playerInfo.stats.winnings || "Desconhecido"}
-                </Text>
-                <Text
-                  fontSize="xs"
-                  color="gray.400"
-                  textShadow="0 0 4px rgba(0,0,0,0.8)"
-                >
-                  Stats via HLTV.org
-                </Text> */}
               </>
             )}
           </GridItem>
@@ -346,3 +320,5 @@ export default function PlayerInfoCard({ playerName = "", interests = [] }) {
     </Box>
   );
 }
+
+export default memo(PlayerInfoCard);

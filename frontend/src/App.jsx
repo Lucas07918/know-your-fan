@@ -13,6 +13,7 @@ import PerfilPage from './pages/PerfilPage'
 import EditProfilePage from "./pages/EditProfilePage"
 import EarnPointsPage from './pages/EarnPointsPage'
 import CallbackPage from './pages/CallbackPage'
+import AddEsportsProfilePage from './pages/AddEsportsProfilePage'
 
 function App() {
   const [userData, setUserData] = useState(null);
@@ -97,6 +98,7 @@ function App() {
       <Route path="/editar-perfil" element={<EditProfilePage userData={userData} setUserData={setUserData} />} />
       <Route path="/ganhar-pontos" element={<EarnPointsPage />} />
       <Route path="/callback" element={<CallbackPage setUserData={setUserData} />} />
+      <Route path="/add-esports-profile" element={<AddEsportsProfilePage userData={userData} setUserData={setUserData} />} />
     </Routes>
   )
 }

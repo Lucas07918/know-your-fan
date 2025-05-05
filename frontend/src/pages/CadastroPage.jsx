@@ -324,7 +324,7 @@ function CadastroPage({ setUserData, updateProfile }) {
         {step === 5 && (
           <>
             <FormControl>
-              <UploadDocumentoPage />
+              <UploadDocumentoPage userData={userData} setUserData={setUserData} />
             </FormControl>
 
             <HStack w="full" justify="space-between" mt={4}>

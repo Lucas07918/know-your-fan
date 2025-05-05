@@ -1,22 +1,66 @@
-import { useState } from 'react'
-import { Container, Heading, VStack, FormControl, FormLabel, Input, Button, useToast, Box, Text } from '@chakra-ui/react'
-import { useNavigate } from 'react-router-dom'
+import { useState } from 'react';
+import { Container, VStack, FormControl, FormLabel, Input, Button, useToast, Box, Text } from '@chakra-ui/react';
+import { doc, setDoc } from 'firebase/firestore';
+import { auth, db } from '../firebase/config';
+import axios from 'axios';
 
-function UploadDocumentoPage() {
-  const [document, setDocument] = useState(null)
-  const [isUploading, setIsUploading] = useState(false)
-  const [isValid, setIsValid] = useState(null) // Para indicar se a validação foi bem-sucedida
-  const [loadingMessage, setLoadingMessage] = useState('')
+function UploadDocumentoPage({ userData, setUserData }) {
+  const [document, setDocument] = useState(null);
+  const [selfie, setSelfie] = useState(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [isValid, setIsValid] = useState(null);
+  const [loadingMessage, setLoadingMessage] = useState('');
   
-  const toast = useToast()
-  const navigate = useNavigate()
+  const toast = useToast();
+  const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 
-  const handleFileChange = (e) => {
-    const file = e.target.files[0]
-    if (file) {
-      setDocument(file)
+  const validateFile = (file) => {
+    const maxSize = 15 * 1024 * 1024; // 15MB
+    const validTypes = ['image/jpeg', 'image/png'];
+    if (!validTypes.includes(file.type)) {
+      return 'Formato inválido. Use JPEG ou PNG.';
     }
-  }
+    if (file.size > maxSize) {
+      return 'Arquivo muito grande. Máximo 15MB.';
+    }
+    return null;
+  };
+
+  const handleDocumentChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const error = validateFile(file);
+      if (error) {
+        toast({
+          title: 'Erro!',
+          description: error,
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
+        return;
+      }
+      setDocument(file);
+    }
+  };
+
+  const handleSelfieChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      const error = validateFile(file);
+      if (error) {
+        toast({
+          title: 'Erro!',
+          description: error,
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
+        return;
+      }
+      setSelfie(file);
+    }
+  };
 
   const handleUpload = async () => {
     if (!document) {
@@ -25,55 +69,107 @@ function UploadDocumentoPage() {
         description: 'Por favor, faça o upload de um documento.',
         status: 'error',
         duration: 3000,
-        isClosable: true
-      })
-      return
+        isClosable: true,
+      });
+      return;
     }
 
-    setIsUploading(true)
-    setLoadingMessage('Validando documento...')
-
-    // Simulação de chamada à API para validar o documento com AI
-    // Exemplo de API que poderia ser usada: AWS Rekognition ou qualquer outra solução
-    try {
-      // Aqui você pode colocar a lógica de validação do documento, substituindo este tempo de espera
-      await new Promise(resolve => setTimeout(resolve, 3000)) // Simulação de espera
-      setIsValid(true) // Após validação com AI, isso seria atualizado conforme o resultado
-
+    const user = auth.currentUser;
+    if (!user) {
       toast({
-        title: 'Documento validado!',
-        description: 'Sua identidade foi validada com sucesso.',
-        status: 'success',
-        duration: 3000,
-        isClosable: true
-      })
+        title: 'Erro!',
+        description: 'Usuário não autenticado. Faça login novamente.',
+        status: 'error',
+        duration: 5000,
+        isClosable: true,
+      });
+      setIsUploading(false);
+      return;
+    }
 
-      setTimeout(() => {
-        navigate('/conectar-redes') // Redireciona para a página de sucesso ou próxima etapa
-      }, 1000)
+    setIsUploading(true);
+    setLoadingMessage('Validando documento...');
+
+    try {
+      const formData = new FormData();
+      formData.append('document', document);
+      if (selfie) {
+        formData.append('selfie', selfie);
+      }
+      formData.append('fullName', userData.fullName || '');
+
+      const response = await axios.post(`${BACKEND_URL}/validate-document`, formData, {
+        headers: { 'Content-Type': 'multipart/form-data' },
+      });
+
+      const { isValid, details } = response.data;
+
+      setIsValid(isValid);
+
+      if (isValid) {
+        const updateData = {
+          documentValidated: true,
+          documentValidationDetails: details,
+          documentValidatedAt: new Date().toISOString(),
+        };
+        await setDoc(doc(db, 'users', user.uid), updateData, { merge: true });
+
+        setUserData((prev) => ({
+          ...prev,
+          ...updateData,
+        }));
+
+        toast({
+          title: 'Documento validado!',
+          description: 'Sua identidade foi validada com sucesso.',
+          status: 'success',
+          duration: 3000,
+          isClosable: true,
+        });
+      } else {
+        toast({
+          title: 'Documento inválido!',
+          description: details || 'O documento não pôde ser validado. Tente novamente.',
+          status: 'error',
+          duration: 3000,
+          isClosable: true,
+        });
+      }
     } catch (error) {
-      setIsValid(false)
+      setIsValid(false);
+      const errorDetails = error.response?.data?.details || error.message;
+      const errorCode = error.response?.data?.code || 'Unknown';
+      console.error('Document validation error:', { errorDetails, errorCode, stack: error.stack });
       toast({
         title: 'Erro ao validar documento!',
-        description: 'Houve um problema ao validar seu documento. Tente novamente.',
+        description: `Erro: ${errorDetails} (Código: ${errorCode})`,
         status: 'error',
-        duration: 3000,
-        isClosable: true
-      }, error)
+        duration: 5000,
+        isClosable: true,
+      });
     } finally {
-      setIsUploading(false)
+      setIsUploading(false);
     }
-  }
+  };
 
   return (
-    <Container maxW="container.md" >
+    <Container maxW="container.md" py={8}>
       <VStack spacing={6}>
         <FormControl isRequired>
           <FormLabel>Selecione o documento de identidade</FormLabel>
           <Input
             type="file"
-            accept="image/*"
-            onChange={handleFileChange}
+            accept="image/jpeg,image/png"
+            onChange={handleDocumentChange}
+          />
+        </FormControl>
+
+        <FormControl>
+          <FormLabel>Selfie (opcional, para validação facial)</FormLabel>
+          <Input
+            type="file"
+            accept="image/jpeg,image/png"
+            onChange={handleSelfieChange}
           />
         </FormControl>
 
@@ -95,14 +191,14 @@ function UploadDocumentoPage() {
           colorScheme="yellow"
           isLoading={isUploading}
           onClick={handleUpload}
-          disabled={isUploading || !document}
+          isDisabled={isUploading || !document}
           mt={6}
         >
           {isUploading ? 'Validando...' : 'Enviar Documento'}
         </Button>
       </VStack>
     </Container>
-  )
+  );
 }
 
-export default UploadDocumentoPage
+export default UploadDocumentoPage;

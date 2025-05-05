@@ -1,18 +1,45 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, memo } from "react";
 import { Box, Text, Image, Flex, Spinner, VStack } from "@chakra-ui/react";
 
 const API_TOKEN = import.meta.env.VITE_PANDASCORE_TOKEN;
-const FURIA_TEAM_ID = 3210;
 
-export default function UpcomingFuriaMatchCard() {
+// Team name to PandaScore ID mapping
+const TEAM_IDS = {
+  FURIA: 124530, // Counter-Strike
+  G2: 3210, // Counter-Strike
+  paiN: 125751, // Counter-Strike
+  LOUD: 130338, // Valorant
+};
+
+function UpcomingMatchCard({ userInterests = [] }) {
   const [match, setMatch] = useState(null);
   const [loading, setLoading] = useState(true);
 
+  // Memoize team selection
+  const teamToQuery = useMemo(() => {
+    const validInterests = userInterests.filter(team => TEAM_IDS[team]);
+    return validInterests.length > 0
+      ? validInterests[Math.floor(Math.random() * validInterests.length)]
+      : "FURIA";
+  }, [userInterests.join(",")]);
+
+  // Debug render
+  console.log("UpcomingMatchCard rendered:", { userInterests, teamToQuery });
+
   useEffect(() => {
-    async function fetchFuriaMatch() {
+    if (!API_TOKEN) {
+      console.error("PandaScore API token missing");
+      setMatch(null);
+      setLoading(false);
+      return;
+    }
+
+    async function fetchTeamMatch() {
+      const teamId = TEAM_IDS[teamToQuery];
       try {
+        console.log(`Fetching match for team: ${teamToQuery} (ID: ${teamId})`);
         const response = await fetch(
-          `https://api.pandascore.co/teams/${FURIA_TEAM_ID}/matches?filter[future]=true&filter[not_started]=true&sort=&page=1&per_page=50`,
+          `https://api.pandascore.co/teams/${teamId}/matches?filter[future]=true&filter[not_started]=true&sort=&page=1&per_page=1`,
           {
             method: "GET",
             headers: {
@@ -23,22 +50,21 @@ export default function UpcomingFuriaMatchCard() {
         );
 
         if (!response.ok) {
-          throw new Error("Falha ao buscar dados da Pandascore API");
+          throw new Error(`HTTP error ${response.status}`);
         }
 
         const data = await response.json();
-        if (data.length > 0) {
-          setMatch(data[0]);
-        }
+        console.log("PandaScore response:", data);
+        setMatch(data[0] || null);
       } catch (error) {
-        console.error("Erro ao buscar partida da FURIA:", error);
+        console.error(`Erro ao buscar partida da ${teamToQuery}:`, error);
       } finally {
         setLoading(false);
       }
     }
 
-    fetchFuriaMatch();
-  }, []);
+    fetchTeamMatch();
+  }, [teamToQuery]); // Stable dependency
 
   if (loading) {
     return (
@@ -85,7 +111,7 @@ export default function UpcomingFuriaMatchCard() {
         p={4}
         textAlign="center"
       >
-        <Text fontSize="sm">A FURIA não tem partidas futuras.</Text>
+        <Text fontSize="sm">A {teamToQuery} não tem partidas futuras.</Text>
       </Box>
     );
   }
@@ -117,7 +143,6 @@ export default function UpcomingFuriaMatchCard() {
       p={4}
     >
       <VStack w="100%" h="100%" spacing={4} justify="center">
-        {/* Times lado a lado */}
         <Flex w="100%" justify="space-between" align="center" gap={4}>
           <VStack align="center" flex="1">
             <Image src={teamA?.image_url} boxSize="60px" />
@@ -129,7 +154,6 @@ export default function UpcomingFuriaMatchCard() {
             <Text fontSize="md">{teamB?.name}</Text>
           </VStack>
         </Flex>
-        {/* Informações da partida embaixo */}
         <VStack spacing={2} align="center">
           <Text fontSize="lg" fontWeight="bold">{match.tournament?.name}</Text>
           <Text fontSize="sm" color="gray.400">{matchTime}</Text>
@@ -138,3 +162,5 @@ export default function UpcomingFuriaMatchCard() {
     </Box>
   );
 }
+
+export default memo(UpcomingMatchCard);
