@@ -8,8 +8,8 @@ export default function AddEsportsProfilePage() {
   const [result, setResult] = useState(null);
   const toast = useToast();
 
-  const COHERE_API_KEY = '4xsf1dyavWl010J8lKLkwjVjgcGoTp45NC2KFgn4'; // Replace if invalid
-  const COHERE_MODEL_ID = '1f9ffc4a-7ad6-4d02-98b4-eb098fa7e083-ft'; // Your fine-tuned model ID
+  const COHERE_API_KEY = import.meta.env.COHERE_API_KEY; // Replace if invalid
+  const COHERE_MODEL_ID = import.meta.env.COHERE_MODEL_ID; // Your fine-tuned model ID
 
   const isValidURL = (str) => {
     try {
