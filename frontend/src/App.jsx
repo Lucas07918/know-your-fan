@@ -1,4 +1,4 @@
-import { BrowserRouter, Routes, Route } from 'react-router-dom'
+import { Routes, Route } from 'react-router-dom'
 import { useEffect, useState } from "react"
 import { onAuthStateChanged } from "firebase/auth"
 import { doc, getDoc, setDoc } from "firebase/firestore"
@@ -9,9 +9,6 @@ import CadastroPage from './pages/CadastroPage'
 import UploadDocumentoPage from './pages/UploadDocumentoPage'
 import ConectarRedesPage from './pages/ConectarRedesPage'
 import HubPage from './pages/HubPage'
-import PerfilPage from './pages/PerfilPage'
-import EditProfilePage from "./pages/EditProfilePage"
-import EarnPointsPage from './pages/EarnPointsPage'
 import CallbackPage from './pages/CallbackPage'
 import AddEsportsProfilePage from './pages/AddEsportsProfilePage'
 
@@ -94,9 +91,6 @@ function App() {
       <Route path="/upload-documento" element={<UploadDocumentoPage />} />
       <Route path="/conectar-redes" element={<ConectarRedesPage userData={userData} setUserData={setUserData} />} />
       <Route path="/hub" element={<HubPage uid={uid} userData={userData} addSocialLink={addSocialLink} updateFanLevel={updateFanLevel} />} />
-      <Route path="/perfil" element={<PerfilPage userData={userData} />} />
-      <Route path="/editar-perfil" element={<EditProfilePage userData={userData} setUserData={setUserData} />} />
-      <Route path="/ganhar-pontos" element={<EarnPointsPage />} />
       <Route path="/callback" element={<CallbackPage setUserData={setUserData} />} />
       <Route path="/add-esports-profile" element={<AddEsportsProfilePage userData={userData} setUserData={setUserData} />} />
     </Routes>
