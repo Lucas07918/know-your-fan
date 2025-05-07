@@ -58,6 +58,8 @@ export default function AddEsportsProfilePage() {
         status: 'warning',
         duration: 3000,
         isClosable: true,
+        bg: 'yellow.400',
+        color: '#121212',
       });
       return;
     }
@@ -192,6 +194,8 @@ export default function AddEsportsProfilePage() {
           status: 'warning',
           duration: 5000,
           isClosable: true,
+          bg: 'yellow.400',
+          color: '#121212',
         });
       } catch (fallbackErr) {
         toast({
@@ -200,6 +204,8 @@ export default function AddEsportsProfilePage() {
           status: 'error',
           duration: 5000,
           isClosable: true,
+          bg: 'yellow.400',
+          color: '#121212',
         });
         console.error('Fallback error:', fallbackErr);
       }
@@ -210,58 +216,83 @@ export default function AddEsportsProfilePage() {
   };
 
   return (
-    <Container maxW="container.md" py={8}>
-      <VStack spacing={6}>
-        <Text fontSize="2xl" fontWeight="bold">
-          Adicionar Perfil de E-sports
-        </Text>
-        <Box w="full">
-          <Text mb={2}>Insira o link do seu perfil de e-sports</Text>
-          <Input
-            placeholder="https://www.hltv.org/player/12345/nickname"
-            value={link}
-            onChange={(e) => setLink(e.target.value)}
-            isDisabled={loading}
-          />
-        </Box>
-
-        {progress > 0 && (
-          <Progress value={progress} size="sm" colorScheme="green" borderRadius="md" w="full" />
-        )}
-
-        {result && (
-          <Box mt={4} p={4} borderWidth="1px" borderRadius="md" w="full">
-            <Text fontWeight="bold" color={result.label === 'relevante' ? 'green.500' : 'red.500'}>
-              {result.label === 'relevante' ? 'Conteúdo relevante!' : 'Conteúdo não relevante'}
-            </Text>
-            <Text mt={2}>
-              Confiança: {(result.confidence * 100).toFixed(2)}%
-            </Text>
-            <Text mt={2} fontStyle="italic" fontWeight="bold">
-              Comentário: {result.comment}
-            </Text>
+    <Box minH="100vh" bg="#121212" py={10}>
+      <Container maxW="container.md" py={8}>
+        <VStack spacing={6} color="white">
+          <Text fontSize="2xl" fontWeight="bold" color="yellow.400">
+            Adicionar Perfil de E-sports 🎮
+          </Text>
+          <Box w="full">
+            <Text mb={2} fontWeight="bold">Insira o link do seu perfil de e-sports</Text>
+            <Input
+              placeholder="https://www.hltv.org/player/12345/nickname"
+              value={link}
+              onChange={(e) => setLink(e.target.value)}
+              isDisabled={loading}
+              bg="whiteAlpha.100"
+              borderColor="yellow.400"
+              color="white"
+              _hover={{ borderColor: 'yellow.500' }}
+              _focus={{ borderColor: 'yellow.500', boxShadow: '0 0 0 1px yellow.500' }}
+            />
           </Box>
-        )}
 
-        <HStack spacing={4} mt={6}>
-          <Button
-            colorScheme="yellow"
-            isLoading={loading}
-            onClick={handleCheckRelevance}
-            isDisabled={loading || !link}
-          >
-            {loading ? 'Validando...' : 'Validar Link'}
-          </Button>
-          <Button
-            variant="outline"
-            colorScheme="white"
-            onClick={() => setLink('')}
-            isDisabled={loading}
-          >
-            Limpar
-          </Button>
-        </HStack>
-      </VStack>
-    </Container>
+          {progress > 0 && (
+            <Progress value={progress} size="sm" colorScheme="yellow" borderRadius="md" w="full" />
+          )}
+
+          {result && (
+            <Box
+              mt={4}
+              p={4}
+              borderWidth="1px"
+              borderColor="yellow.400"
+              borderRadius="md"
+              w="full"
+              bg="whiteAlpha.100"
+            >
+              <Text
+                fontWeight="bold"
+                color={result.label === 'relevante' ? 'yellow.400' : 'red.500'}
+              >
+                {result.label === 'relevante' ? 'Conteúdo relevante!' : 'Conteúdo não relevante'}
+              </Text>
+              <Text mt={2} color="white">
+                Confiança: {(result.confidence * 100).toFixed(2)}%
+              </Text>
+              <Text mt={2} fontStyle="italic" fontWeight="bold" color="white">
+                Comentário: {result.comment}
+              </Text>
+            </Box>
+          )}
+
+          <HStack spacing={4} mt={6}>
+            <Button
+              colorScheme="yellow"
+              isLoading={loading}
+              onClick={handleCheckRelevance}
+              isDisabled={loading || !link}
+              w="full"
+              _hover={{ bg: 'yellow.500' }}
+            >
+              {loading ? 'Validando...' : 'Validar Link'}
+            </Button>
+            <Button
+              variant="outline"
+              borderColor="yellow.400"
+              color="white"
+              onClick={() => setLink('')}
+              isDisabled={loading}
+              w="full"
+              _hover={{ bg: 'yellow.400', color: '#121212' }}
+            >
+              Limpar
+            </Button>
+          </HStack>
+        </VStack>
+      </Container>
+    </Box>
   );
 }
+
+

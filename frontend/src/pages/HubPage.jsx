@@ -60,7 +60,8 @@ export default function HubPage({ uid, userData }) {
           "https://newsapi.org/v2/everything",
           {
             params: {
-              q: query,
+              q: "valorant",
+              domains: "ign.com",
               sortBy: "publishedAt",
               apiKey: NEWSAPI_KEY,
               pageSize: 3,
@@ -93,6 +94,7 @@ export default function HubPage({ uid, userData }) {
   return (
     <Flex
       gap={6}
+      backgroundImage="url('https://img.freepik.com/fotos-gratis/fundo-claro_24972-1415.jpg?semt=ais_hybrid&w=740')"
       backgroundColor="#272727"
       backgroundSize="cover"
       backgroundPosition="center"
@@ -165,7 +167,7 @@ export default function HubPage({ uid, userData }) {
 function CardItem({ title, subtitle, height = "150px", onClick }) {
   return (
     <Box
-      bg="rgba(0,0,0,0.7)"
+      bg="linear-gradient(135deg, rgba(0, 0, 0, 0.3) 0%, rgba(51, 51, 51, 0.3) 100%)"
       backdropFilter="blur(5px)"
       borderRadius="2xl"
       display="flex"

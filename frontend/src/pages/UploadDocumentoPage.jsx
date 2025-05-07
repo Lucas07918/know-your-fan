@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Container, VStack, FormControl, FormLabel, Input, Button, useToast, Box, Text } from '@chakra-ui/react';
+import { VStack, FormControl, FormLabel, Input, Button, useToast, Box, Text } from '@chakra-ui/react';
 import { doc, setDoc } from 'firebase/firestore';
 import { auth, db } from '../firebase/config';
 import axios from 'axios';
@@ -10,7 +10,7 @@ function UploadDocumentoPage({ userData, setUserData }) {
   const [isUploading, setIsUploading] = useState(false);
   const [isValid, setIsValid] = useState(null);
   const [loadingMessage, setLoadingMessage] = useState('');
-  
+
   const toast = useToast();
   const BACKEND_URL = import.meta.env.VITE_BACKEND_URL || 'http://localhost:3001';
 
@@ -125,6 +125,8 @@ function UploadDocumentoPage({ userData, setUserData }) {
           status: 'success',
           duration: 3000,
           isClosable: true,
+          bg: 'yellow.400',
+          color: '#121212',
         });
       } else {
         toast({
@@ -153,51 +155,91 @@ function UploadDocumentoPage({ userData, setUserData }) {
   };
 
   return (
-    <Container maxW="container.md" py={8}>
-      <VStack spacing={6}>
-        <FormControl isRequired>
-          <FormLabel>Selecione o documento de identidade</FormLabel>
+    <VStack spacing={6} w="full">
+      <FormControl isRequired>
+        <FormLabel color="white" fontWeight="bold">Selecione o documento de identidade</FormLabel>
+        <Box
+          border="2px dashed"
+          borderColor="yellow.400"
+          borderRadius="md"
+          p={4}
+          bg="whiteAlpha.100"
+          textAlign="center"
+          _hover={{ bg: 'whiteAlpha.200' }}
+          transition="background 0.2s ease"
+          position="relative"
+        >
           <Input
             type="file"
             accept="image/jpeg,image/png"
             onChange={handleDocumentChange}
+            opacity={0}
+            position="absolute"
+            w="full"
+            h="full"
+            cursor="pointer"
           />
-        </FormControl>
+          <Text color="white" mb={2}>
+            {document ? document.name : 'Arraste ou clique para selecionar o documento'}
+          </Text>
+        </Box>
+      </FormControl>
 
-        <FormControl>
-          <FormLabel>Selfie (opcional, para validação facial)</FormLabel>
+      <FormControl>
+        <FormLabel color="white" fontWeight="bold">Selfie (opcional, para validação facial)</FormLabel>
+        <Box
+          border="2px dashed"
+          borderColor="yellow.400"
+          borderRadius="md"
+          p={4}
+          bg="whiteAlpha.100"
+          textAlign="center"
+          _hover={{ bg: 'whiteAlpha.200' }}
+          transition="background 0.2s ease"
+          position="relative"
+        >
           <Input
             type="file"
             accept="image/jpeg,image/png"
             onChange={handleSelfieChange}
+            opacity={0}
+            position="absolute"
+            w="full"
+            h="full"
+            cursor="pointer"
           />
-        </FormControl>
+          <Text color="white" mb={2}>
+            {selfie ? selfie.name : 'Arraste ou clique para selecionar a selfie'}
+          </Text>
+        </Box>
+      </FormControl>
 
-        {isUploading && (
-          <Box mt={4}>
-            <Text>{loadingMessage}</Text>
-          </Box>
-        )}
+      {isUploading && (
+        <Box mt={4}>
+          <Text color="yellow.400">{loadingMessage}</Text>
+        </Box>
+      )}
 
-        {isValid !== null && (
-          <Box mt={4}>
-            <Text color={isValid ? 'green.500' : 'red.500'}>
-              {isValid ? 'Documento validado com sucesso!' : 'Falha na validação do documento. Tente novamente.'}
-            </Text>
-          </Box>
-        )}
+      {isValid !== null && (
+        <Box mt={4}>
+          <Text color={isValid ? 'yellow.400' : 'red.500'}>
+            {isValid ? 'Documento validado com sucesso!' : 'Falha na validação do documento. Tente novamente.'}
+          </Text>
+        </Box>
+      )}
 
-        <Button
-          colorScheme="yellow"
-          isLoading={isUploading}
-          onClick={handleUpload}
-          isDisabled={isUploading || !document}
-          mt={6}
-        >
-          {isUploading ? 'Validando...' : 'Enviar Documento'}
-        </Button>
-      </VStack>
-    </Container>
+      <Button
+        colorScheme="yellow"
+        isLoading={isUploading}
+        onClick={handleUpload}
+        isDisabled={isUploading || !document}
+        mt={6}
+        w="full"
+        _hover={{ bg: 'yellow.500' }}
+      >
+        {isUploading ? 'Validando...' : 'Enviar Documento'}
+      </Button>
+    </VStack>
   );
 }
 

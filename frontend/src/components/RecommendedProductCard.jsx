@@ -100,7 +100,7 @@ export default function RecommendedProductCard({ interests }) {
           boxShadow="0 2px 10px rgba(0,0,0,0.9)"
           _hover={{
             transform: "scale(1.02)",
-            boxShadow: "0 0 10px #FFD700",
+            boxShadow: "0 0 10px #ffffff",
           }}
           p={4}
           textAlign="center"
@@ -134,7 +134,7 @@ export default function RecommendedProductCard({ interests }) {
           boxShadow="0 2px 10px rgba(0,0,0,0.9)"
           _hover={{
             transform: "scale(1.02)",
-            boxShadow: "0 0 10px #FFD700",
+            boxShadow: "0 0 10px #ffffff",
           }}
           position="relative"
           overflow="hidden"

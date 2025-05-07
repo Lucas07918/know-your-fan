@@ -23,6 +23,12 @@ function UpcomingMatchCard({ userInterests = [] }) {
       : "FURIA";
   }, [userInterests.join(",")]);
 
+  // Define gradient background for specific teams
+  const hasGradient = ["FURIA", "LOUD"].includes(teamToQuery);
+  const cardBg = hasGradient
+    ? "linear-gradient(135deg, rgba(0, 0, 0, 0.3) 0%, rgba(51, 51, 51, 0.3) 100%)"
+    : "rgba(0,0,0,0.7)";
+
   // Debug render
   console.log("UpcomingMatchCard rendered:", { userInterests, teamToQuery });
 
@@ -69,7 +75,7 @@ function UpcomingMatchCard({ userInterests = [] }) {
   if (loading) {
     return (
       <Box
-        bg="rgba(0,0,0,0.7)"
+        bg={cardBg}
         backdropFilter="blur(5px)"
         borderRadius="2xl"
         height="100%"
@@ -85,7 +91,7 @@ function UpcomingMatchCard({ userInterests = [] }) {
           boxShadow: "0 0 10px #FFD700",
         }}
       >
-        <Spinner color="gold" />
+        <Spinner color="yellow.400" />
       </Box>
     );
   }
@@ -93,7 +99,7 @@ function UpcomingMatchCard({ userInterests = [] }) {
   if (!match) {
     return (
       <Box
-        bg="rgba(0,0,0,0.7)"
+        bg={cardBg}
         backdropFilter="blur(5px)"
         borderRadius="2xl"
         height="100%"
@@ -125,7 +131,7 @@ function UpcomingMatchCard({ userInterests = [] }) {
 
   return (
     <Box
-      bg="rgba(0,0,0,0.7)"
+      bg={cardBg}
       backdropFilter="blur(5px)"
       borderRadius="2xl"
       height="100%"
@@ -155,8 +161,8 @@ function UpcomingMatchCard({ userInterests = [] }) {
           </VStack>
         </Flex>
         <VStack spacing={2} align="center">
-          <Text fontSize="lg" fontWeight="bold">{match.tournament?.name}</Text>
-          <Text fontSize="sm" color="gray.400">{matchTime}</Text>
+          <Text fontSize="lg" fontWeight="bold" color="yellow.400">{match.tournament?.name}</Text>
+          <Text fontSize="sm" color="whiteAlpha.700">{matchTime}</Text>
         </VStack>
       </VStack>
     </Box>
@@ -164,3 +170,5 @@ function UpcomingMatchCard({ userInterests = [] }) {
 }
 
 export default memo(UpcomingMatchCard);
+
+

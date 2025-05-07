@@ -14,7 +14,7 @@ export default function TwitchLiveCard({ canais }) {
 
   return (
     <Box
-      bg="rgba(0, 0, 0, 0.7)"
+      bg="linear-gradient(135deg, rgba(0, 0, 0, 0.3) 0%, rgba(51, 51, 51, 0.3) 100%)"
       backdropFilter="blur(5px)"
       borderRadius="2xl"
       display="flex"
